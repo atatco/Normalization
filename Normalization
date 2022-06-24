@@ -1,0 +1,65 @@
+from pymongo import MongoClient
+from pandas import *
+import re
+
+cluster = MongoClient("mongodb+srv://atatco:wrz9TjDzXm6zq4zo@cluster0.shzhn.mongodb.net/?retryWrites=true&w=majority")
+db_uta = cluster["uta"]
+collection_people = db_uta["people_dev"]
+query = {"type" : "Client"}
+doc = list(collection_people.find(query))
+
+# READ CSV FILE THEN CONVERT INTO LIST
+data = read_csv("toTitle.csv")
+toTitle = data['name'].tolist()
+
+#NORMALIZE NAMES
+for person in doc:
+    name = person.get("name")
+    nameSplit = name.split()
+    if re.search("aj|pj|jj|dj", name.lower()) and len(nameSplit[0]) == 2:                   # if Aj, pj, jj, or dj and first name only 2 characters
+        name = nameSplit[0].upper() + name[2:].title()                                      # make firstname upper while the rest as title
+        filter = {"_id": person.get("_id")}
+        collection_people.update_one(filter, {"$set": {"name": name}})
+    elif re.search("Mc[a-z]", name):                                                        #if name has "Mc"
+        result = name.find('Mc')                                                            #capitalize third letter
+        name = name[:(result + 2)] + name[(result + 2)].upper() + name[result + 3:]         #combine with updated name
+        filter = {"_id": person.get("_id")}
+        collection_people.update_one(filter, {"$set": {"name": name}})
+        continue
+    elif re.search("Macdonald|Maclennan|Macarthur|Macaherson|Maclachlan|Mackinnon", name):  #if name matches the list starting with Mac
+        result = name.find('Mac')
+        name = name[:(result + 3)] + name[(result + 3)].upper() + name[result + 4:]         #capitalize fourth letter
+        filter = {"_id": person.get("_id")}
+        collection_people.update_one(filter, {"$set": {"name": name}})
+    else:
+        if name in toTitle:                                                                 #if name matches the list in toTitle
+            name = name.title()                                                             #convert to title
+            filter = {"_id": person.get("_id")}
+            collection_people.update_one(filter, {"$set": {"name": name}})
+
+
+# NORMALIZE PHONE NUMBERS
+check = []                                                                                  #list of strings not included in algorithm
+for person in doc:
+    contacts = person.get("contacts")                                                       #could not access "contact" elements from parent "contact"
+    if phoneNum is None or isnull:                                                          #to skip if there is no entry
+        pass
+    elif phoneNum.startswith("+") or re.search(".com", phoneNum):                           # if already formatted or is an email
+        pass
+    elif re.search("((|)| |-)", phoneNum):                                                  #removing special characters like ")( -"
+        phoneNum = phoneNum.translate(str.maketrans('', '', ' )(-#$'))
+        if (len(phoneNum) == 11 and phoneNum.startswith("1")) or len(phoneNum) == 12:       #if length is 11/12 add a plus at the front (UK/US #)
+            phoneNum = "+" + phoneNum
+            print(phoneNum)
+            # filter = {"_id": person.get("_id")}
+            # collection_people.update_one(filter, {"$set": {"phone": phoneNum}})
+        elif len(phoneNum) == 10:                                                           #if length is 10 (probably a US number)
+            phoneNum = "+1" + phoneNum
+            print(phoneNum)
+            # filter = {"_id": person.get("_id")}
+            # collection_people.update_one(filter, {"$set": {"phone": phoneNum}})
+        else:
+            check.append(phoneNum)                                                          #if none of the above, put into a list for us to check
+    else:
+        check.append(phoneNum)                                                              #if none of the above, put into a list for us to check
+print(check)
