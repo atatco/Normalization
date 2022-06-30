@@ -36,30 +36,3 @@ for person in doc:
             name = name.title()                                                             #convert to title
             filter = {"_id": person.get("_id")}
             collection_people.update_one(filter, {"$set": {"name": name}})
-
-
-# NORMALIZE PHONE NUMBERS
-check = []                                                                                  #list of strings not included in algorithm
-for person in doc:
-    phoneNum = person.get("contacts")                                                       #could not access "contact" elements from parent "contact"
-    if phoneNum is None or isnull:                                                          #to skip if there is no entry
-        pass
-    elif phoneNum.startswith("+") or re.search(".com", phoneNum):                           # if already formatted or is an email
-        pass
-    elif re.search("((|)| |-)", phoneNum):                                                  #removing special characters like ")( -"
-        phoneNum = phoneNum.translate(str.maketrans('', '', ' )(-#$'))
-        if (len(phoneNum) == 11 and phoneNum.startswith("1")) or len(phoneNum) == 12:       #if length is 11/12 add a plus at the front (UK/US #)
-            phoneNum = "+" + phoneNum
-            print(phoneNum)
-            # filter = {"_id": person.get("_id")}
-            # collection_people.update_one(filter, {"$set": {"phone": phoneNum}})
-        elif len(phoneNum) == 10:                                                           #if length is 10 (probably a US number)
-            phoneNum = "+1" + phoneNum
-            print(phoneNum)
-            # filter = {"_id": person.get("_id")}
-            # collection_people.update_one(filter, {"$set": {"phone": phoneNum}})
-        else:
-            check.append(phoneNum)                                                          #if none of the above, put into a list for us to check
-    else:
-        check.append(phoneNum)                                                              #if none of the above, put into a list for us to check
-print(check)
