@@ -41,7 +41,7 @@ for person in doc:
 # NORMALIZE PHONE NUMBERS
 check = []                                                                                  #list of strings not included in algorithm
 for person in doc:
-    contacts = person.get("contacts")                                                       #could not access "contact" elements from parent "contact"
+    phoneNum = person.get("contacts")                                                       #could not access "contact" elements from parent "contact"
     if phoneNum is None or isnull:                                                          #to skip if there is no entry
         pass
     elif phoneNum.startswith("+") or re.search(".com", phoneNum):                           # if already formatted or is an email
